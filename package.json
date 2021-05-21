@@ -1,0 +1,25 @@
+{
+  "name": "elevatormaprewritten",
+  "version": "1.0.0",
+  "description": "The elevatormap rewritten",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TheGreyDiamond/elevatormapRewritten.git"
+  },
+  "author": "TheGreydiamond",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/TheGreyDiamond/elevatormapRewritten/issues"
+  },
+  "homepage": "https://github.com/TheGreyDiamond/elevatormapRewritten#readme",
+  "dependencies": {
+    "eta": "^1.12.1",
+    "express": "^4.17.1",
+    "winston": "^3.3.3"
+  }
+}
