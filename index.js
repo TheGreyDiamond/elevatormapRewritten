@@ -179,8 +179,23 @@ app.get("/api/getElevators", function (req, res) {
       var lan = parseFloat(req.query.lan)
       var lat = parseFloat(req.query.lat)
       var radius = parseFloat(req.query.radius)
-      res.send(JSON.stringify({ state: "Ok", "message": ""}));
-      res.status(200);
+
+      // TODO: Return just the elevators in the viewers area
+
+      con.query("SELECT * FROM elevators", function (err, result, fields) {
+        if (err){
+          res.status(500);
+          res.send(JSON.stringify({ state: "Failed", "message": "A server side error occured.", "results": []}));
+          logger.error("The server failed to execute a request")
+          throw err;
+        }else{
+          console.log(result[0]);
+          res.status(200);
+          res.send(JSON.stringify({ state: "Ok", "message": "", "results": result}));
+        }
+        
+      });
+      
   }else{
     // Welp something is missing
     res.status(400);

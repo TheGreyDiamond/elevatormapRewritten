@@ -95,6 +95,14 @@
         );
         // mymap.setView(new L.LatLng(10.737, -73.923), 8);
       }
+
+      function httpGet(theUrl) {
+        var xmlHttp = new XMLHttpRequest();
+        xmlHttp.open("GET", theUrl, false); // false for synchronous request
+        xmlHttp.send(null);
+        return xmlHttp.responseText;
+      }
+
       function home() {
         if (navigator.geolocation) {
           setTimeout(function () {
@@ -106,6 +114,24 @@
       }
 
       home();
+
+      function addPin(item, index){
+        var marker = new L.Marker([item.lat, item.lng])
+        marker.addTo(mymap);
+      }
+
+      // Start getting the elevators
+      response = httpGet("http://localhost:3000/api/getElevators?lan=" + mymap.getCenter.lng + "&lat=" + mymap.getCenter.lat + "&radius=" + mymap.getZoom())
+      response = JSON.parse(response)
+
+      if(response.state == "Ok"){
+        response.results.forEach(addPin)
+      }else{
+        // DONT FORGET TO SHOW POPUP OR SOMETHING
+        console.log("Request failed with " + response.message)
+        console.log(response)
+        alert("Loading of the map pins failed")
+      }
     </script>
   </body>
 </html>
