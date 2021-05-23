@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Basic Page Needs
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+    <meta charset="utf-8" />
+    <title><%= it.siteTitel %></title>
+    <meta name="description" content="<%= it.desc %>" />
+    <meta name="author" content="<%= it.author %>" />
+
+    <!-- Mobile Specific Metas
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- FONT
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+    <link
+      href="//fonts.googleapis.com/css?family=Raleway:400,300,600"
+      rel="stylesheet"
+      type="text/css"
+    />
+
+    <!-- CSS
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+    <link rel="stylesheet" href="css/normalize.css" />
+    <link rel="stylesheet" href="css/barebones.css" />
+    <link rel="stylesheet" href="css/skeleton-legacy.css" />
+    <link rel="stylesheet" href="css/mainMap.css" />
+
+    <!-- Favicon
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+    <link rel="icon" type="image/png" href="images/favicon-16.png" />
+
+    <script async defer src="/js/site.js"></script>
+    <script
+      src="https://kit.fontawesome.com/<%= it.fontawesomeKey %>.js"
+      crossorigin="anonymous"
+    ></script>
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+      integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+      crossorigin=""
+    />
+
+    <!-- Make sure you put this AFTER Leaflet's CSS -->
+    <script
+      src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+      integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+      crossorigin=""
+    ></script>
+  </head>
+  <body>
+    <!-- Primary Page Layout
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+    <div style="margin: 0px">
+      <div class="map" id="map"></div>
+
+      <div class="inspector"></div>
+    </div>
+
+    <aside>
+      <i
+        style="color: black; cursor: pointer"
+        class="fas fa-map-marker-alt"
+        onclick="home()"
+      ></i>
+    </aside>
+
+    <!-- End Document
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+    <script type="text/javascript">
+      var mymap = L.map("map").setView([51.505, -0.09], 50);
+
+      L.tileLayer(
+        "https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=<%= it.mapboxAccessToken %>",
+        {
+          attribution:
+            'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+          maxZoom: 18,
+          id: "mapbox/streets-v11",
+          tileSize: 512,
+          zoomOffset: -1,
+          accessToken: "<%= it.mapboxAccessToken %>",
+        }
+      ).addTo(mymap);
+
+      function showPosition(position) {
+        console.log(position.coords);
+
+        mymap.setView(
+          new L.LatLng(position.coords.latitude, position.coords.longitude),
+          10
+        );
+        // mymap.setView(new L.LatLng(10.737, -73.923), 8);
+      }
+      function home() {
+        if (navigator.geolocation) {
+          setTimeout(function () {
+            navigator.geolocation.getCurrentPosition(showPosition);
+          }, 200);
+        } else {
+          console.warn("Geolocation of user could not be fetched");
+        }
+      }
+
+      home();
+    </script>
+  </body>
+</html>

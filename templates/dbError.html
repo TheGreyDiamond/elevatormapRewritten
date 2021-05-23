@@ -38,48 +38,24 @@
   <div class="grid-container thirds" style="margin-top: 5%;">
     <div></div>
       <div>
-        <h1>The Elevator map</h1>
-        <p>Some of you might have heard of trainspotters. There are also elevator spotters, more then you might expect. This map is dedicated to all the elevator spotters.</p>
+        <h1><i style="color: red;" class="fas fa-exclamation-triangle"></i></h1>
       </div>
     </div>
   </div>
 
   <div class="grid-container thirds" style="margin-top: 5%;">
     <div></div>
-    <div>
-      <h5>
-        Check it out now <br>
-        <a href= "/map" ><button class="button-primary">Visit the map <i class="fas fa-arrow-right"></i> </button></a>
-      </h5>
-      
-    </div>
-  </div>
-
-  <div class="grid-container thirds" style="margin-top: 5%;">
-    <div>
-      <h3> <i class="fas fa-rocket"></i><br>
-      Simply fast</h3>
-    </div>
       <div>
-        <h3> <i class="fas fa-hands"></i><br>
-          Comunity driven</h3>
+        <h1>Oh no!</h1>
+        <p>This page can currently not be displayed.
+            <%= it.displayText %>
+              <br>
+              <a href="/"><button class="button-primary">
+                  Return to the startpage
+              </button>
+            </a>
+        </p>
       </div>
-      <div>
-        <h3> <i class="fab fa-node-js"></i><br>
-          Built on node.js</h3>
-      </div>
-    </div>
-  </div>
-
-  
-
-  <div class="grid-container thirds" style="margin-top: 5%;">
-    <div></div>
-    <div>
-      <h3>
-        <i class="fas fa-atlas"></i><br>
-        With currently <%= it.elevatorCount %> elevators in the map
-      </h3>
     </div>
   </div>
 

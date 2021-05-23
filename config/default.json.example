@@ -1,0 +1,9 @@
+{
+    "fontAwesome": "",
+    "mapboxAccessToken": "",
+    "mysql": {
+        "user": "",
+        "password": "",
+        "allowCreation": true
+    }
+}
