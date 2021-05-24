@@ -84,7 +84,7 @@ function checkIfMySQLStructureIsReady(){
         if(mysqlData.allowCreation){
           // Lets create it then
           logger.warn("Creating a new table")
-          const sql = 'CREATE TABLE `' + mysqlData.database + '`.`elevators` ( `id` INT NOT NULL AUTO_INCREMENT , `lat` FLOAT NOT NULL , `lng` FLOAT NOT NULL , `manufacturer` VARCHAR(512) NOT NULL , `info` VARCHAR(512) NOT NULL , `visitabilty` INT NOT NULL , `technology` INT NOT NULL , `images` JSON NOT NULL , `amountOfFloors` INT NOT NULL , `maxPassangers` INT NOT NULL , `maxWeight` INT NOT NULL , PRIMARY KEY (`id`)) ENGINE = InnoDB;';
+          const sql = 'CREATE TABLE `' + mysqlData.database + '`.`elevators` ( `id` INT NOT NULL AUTO_INCREMENT , `lat` FLOAT NOT NULL , `lng` FLOAT NOT NULL , `manufacturer` VARCHAR(512) NOT NULL , `modell` VARCHAR(512) NOT NULL , `info` VARCHAR(512) NOT NULL , `visitabilty` INT NOT NULL , `technology` INT NOT NULL , `images` JSON NOT NULL , `amountOfFloors` INT NOT NULL , `maxPassangers` INT NOT NULL , `maxWeight` INT NOT NULL , PRIMARY KEY (`id`)) ENGINE = InnoDB;';
           con.query(sql, function (err, result) {
             if (err) throw err;
             logger.info("Table created");
@@ -187,11 +187,93 @@ app.get("/api/getElevators", function (req, res) {
           res.status(500);
           res.send(JSON.stringify({ state: "Failed", "message": "A server side error occured.", "results": []}));
           logger.error("The server failed to execute a request")
-          throw err;
+          mysqlIsUpAndOkay = false;
         }else{
           console.log(result[0]);
           res.status(200);
           res.send(JSON.stringify({ state: "Ok", "message": "", "results": result}));
+        }
+        
+      });
+      
+  }else{
+    // Welp something is missing
+    res.status(400);
+    res.setHeader('Content-Type', 'application/json');
+    res.send(JSON.stringify({ state: "Failed", "message": "Missing arguments" }));
+  }
+});
+
+
+
+app.get("/api/getElevatorLocation", function (req, res) {
+  console.log(req.query)
+  if(req.query.lan != undefined && req.query.lat != undefined && req.query.radius != undefined){
+    // All parameters are there
+    res.setHeader('Content-Type', 'application/json');
+    try {
+      var lan = parseFloat(req.query.lan)
+      var lat = parseFloat(req.query.lat)
+      var radius = parseFloat(req.query.radius)
+    } catch (error) {
+      res.send(JSON.stringify({ state: "Failed", "message": "Invalid arguments" }));
+      res.status(400);
+      return
+    }
+      var lan = parseFloat(req.query.lan)
+      var lat = parseFloat(req.query.lat)
+      var radius = parseFloat(req.query.radius)
+
+      // TODO: Return just the elevators in the viewers area
+
+      con.query("SELECT id, lat, lng FROM elevators", function (err, result, fields) {
+        if (err){
+          res.status(500);
+          res.send(JSON.stringify({ state: "Failed", "message": "A server side error occured.", "results": []}));
+          logger.error("The server failed to execute a request")
+          mysqlIsUpAndOkay = false;
+        }else{
+          console.log(result[0]);
+          res.status(200);
+          res.send(JSON.stringify({ state: "Ok", "message": "", "results": result}));
+        }
+        
+      });
+      
+  }else{
+    // Welp something is missing
+    res.status(400);
+    res.setHeader('Content-Type', 'application/json');
+    res.send(JSON.stringify({ state: "Failed", "message": "Missing arguments" }));
+  }
+});
+
+
+app.get("/api/getElevatorById", function (req, res) {
+  console.log(req.query)
+  if(req.query.id != undefined){
+    // All parameters are there
+    res.setHeader('Content-Type', 'application/json');
+    try {
+      var id = parseFloat(req.query.id)
+    } catch (error) {
+      res.send(JSON.stringify({ state: "Failed", "message": "Invalid arguments" }));
+      res.status(400);
+      return
+    }
+      var id = parseFloat(req.query.id)
+
+      con.query("SELECT * FROM elevators WHERE id=" + id, function (err, result, fields) {
+        if (err){
+          res.status(500);
+          res.send(JSON.stringify({ state: "Failed", "message": "A server side error occured.", "results": []}));
+          logger.error("The server failed to execute a request")
+          console.log(err)
+          mysqlIsUpAndOkay = false;
+        }else{
+          console.log(result[0]);
+          res.status(200);
+          res.send(JSON.stringify({ state: "Ok", "message": "Successful.", "results": result}));
         }
         
       });
