@@ -160,6 +160,11 @@ html {
 	
 }
 
+@font-face {
+  font-family: 'Raleway';
+  src: URL('/fonts/raleway/Raleway-VariableFont_wght.ttf') format('truetype');
+}
+
 
 
 
