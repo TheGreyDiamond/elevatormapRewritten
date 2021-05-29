@@ -36,6 +36,19 @@
 		<div class="container-login100">
       
 			<div class="wrap-login100">
+				<% if(it.error == true) { %>
+					<div class="alert" id="alert">
+					  <span class="closebtn" id="closeBtn">&times;</span>
+					  <%= it.errorMessage %>
+					</div>
+					<script>
+					  $("#closeBtn").click(function () {
+						$("#alert").fadeOut("slow", function () {
+						  // Animation complete.
+						});
+					  });
+					</script>
+					<% } %>
         <div>
           <a href="/"><i class="fas fa-arrow-left"></i> Back</a>
           

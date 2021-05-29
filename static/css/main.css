@@ -40,6 +40,7 @@
 	margin: 0px; 
 	padding: 0px; 
 	box-sizing: border-box;
+  transition: 0.2s;
 }
 
 body, html {
@@ -106,6 +107,8 @@ textarea {
 textarea:focus, input:focus {
   border-color: transparent !important;
 }
+
+
 
 input:focus::-webkit-input-placeholder { color:transparent; }
 input:focus:-moz-placeholder { color:transparent; }
@@ -495,5 +498,25 @@ iframe {
   }
 }
 
+.alert {
+  padding: 20px;
+  background-color: #f44336;
+  color: white;
+  transition: 0.5s;
+}
 
+.closebtn {
+  margin-left: 15px;
+  color: white;
+  font-weight: bold;
+  float: right;
+  font-size: 22px;
+  line-height: 20px;
+  cursor: pointer;
+  transition: 0.5s;
+}
 
+.closebtn:hover {
+  color: black;
+  transition: 0.5s;
+}

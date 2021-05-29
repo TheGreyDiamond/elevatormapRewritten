@@ -5,10 +5,12 @@ const Eta = require("eta");
 const winston = require("winston");
 const mysql = require("mysql");
 const bodyParser = require("body-parser");
-const bcrypt = require('bcrypt');
-const {verify} = require('hcaptcha');
-const csp = require(`helmet`)
-
+const bcrypt = require("bcrypt");
+const { verify } = require("hcaptcha");
+const csp = require(`helmet`);
+const session = require("express-session");
+const nodemailer = require("nodemailer");
+const crypto = require("crypto");
 
 // Inting the logger
 const logger = winston.createLogger({
@@ -55,11 +57,13 @@ app.use(csp.contentSecurityPolicy({
   },
   
 }))
+
 */
 
 // Settings
 const port = 3000;
 const startUpTime = Math.floor(new Date().getTime() / 1000);
+const saltRounds = 10;
 
 // Load config
 try {
@@ -77,12 +81,42 @@ try {
   var mapboxAccessToken = jsonConfig.mapboxAccessToken;
   var mysqlData = jsonConfig.mysql;
   var hCaptcha = jsonConfig.hCaptcha;
+  var mailConf = jsonConfig.mail;
+  var serverAdress = jsonConfig.serverAdress;
+  var cookieSecret =
+    jsonConfig.cookieSecret || "saF0DSF65AS4DF0S4D6F0S54DF0Fad";
 } catch (error) {
   logger.error(
     "While reading the config an error occured. The error was: " + error
   );
 }
 
+var transport = nodemailer.createTransport({
+  host: mailConf.host,
+  port: mailConf.port,
+  requireTLS: true,
+  secure: false,
+  debug: true,
+  disableFileAccess: true,
+  //authMethod: "START TLS",
+  auth: {
+    user: mailConf.username,
+    pass: mailConf.password,
+  },
+});
+
+//let transporter = nodemailer.createTransport(transport)
+//console.log(transport.host)
+logger.info("Testing SMTP connection");
+transport.verify(function (error, success) {
+  if (error) {
+    logger.error(error);
+  } else {
+    logger.info("SMPT server is ready to accept messages");
+  }
+});
+
+app.use(session({ secret: cookieSecret }));
 
 // Basic defines for html
 const author = "TheGreydiamond";
@@ -98,6 +132,44 @@ var con = mysql.createConnection({
   password: mysqlData.password,
   database: mysqlData.database,
 });
+
+// sendVerificationMail(2);
+function sendVerificationMail(userId) {
+  // Query for the mail
+  const stmt = "SELECT * FROM mailverification WHERE id=" + userId;
+  con.query(stmt, function (err, result, fields) {
+    if (err) throw err; // TODO proper error handling
+    if (result.length == 0) {
+      logger.warn(
+        "sendVerificationMail failed because ID " + userId + " doesnt exist!"
+      );
+    } else {
+      const emailContent =
+        "Hi! \n You have created an account for the open elevator map. To finalize the process please verify your E-Mail adress. Use this link: http://" +
+        serverAdress +
+        "/verify/" +
+        result[0].token;
+      let info = transport.sendMail({
+        from: '"Elevator map " <' + mailConf.username + ">", // sender address
+        to: result[0].targetMail, // list of receivers
+        subject: "[Elevator map] Please verify your Mailadress", // Subject line
+        text: emailContent, // plain text body
+        html: emailContent.replace("\n", "<br>"), // html body
+      });
+    }
+
+    console.log(result);
+  });
+
+  /*
+  let info = await transporter.sendMail({
+    from: '"Elevator map " <' + mysqlData.username + '>', // sender address
+    to: "bar@example.com, baz@example.com", // list of receivers
+    subject: "Hello ✔", // Subject line
+    text: "Hello world?", // plain text body
+    html: "<b>Hello world?</b>", // html body
+  });*/
+}
 
 function checkIfMySQLStructureIsReady() {
   if (mysqlIsUpAndOkay) {
@@ -118,7 +190,11 @@ function checkIfMySQLStructureIsReady() {
           const newSql =
             "CREATE TABLE `" +
             mysqlData.database +
-            "`.`users` ( `id` INT NOT NULL AUTO_INCREMENT , `email` VARCHAR(255) NOT NULL , `username` VARCHAR(255) NOT NULL , `passwordHash` VARCHAR(512) NOT NULL , `permLevel` INT NOT NULL DEFAULT '0' , PRIMARY KEY (`id`)) ENGINE = InnoDB;";
+            "`.`users` ( `id` INT NOT NULL AUTO_INCREMENT , `email` VARCHAR(255) NOT NULL , `username` VARCHAR(255) NOT NULL , `passwordHash` VARCHAR(512) NOT NULL , `permLevel` INT NOT NULL DEFAULT '0' , `verificationState` INT NOT NULL DEFAULT '0' , PRIMARY KEY (`id`), UNIQUE KEY (`email`)) ENGINE = InnoDB;";
+          const newSqlMailVeri =
+            "CREATE TABLE `" +
+            mysqlData.database +
+            "`.`mailverification` ( `id` INT NOT NULL AUTO_INCREMENT , `targetMail` VARCHAR(512) NOT NULL , `userID` INT NOT NULL , `token` VARCHAR(255) NOT NULL , PRIMARY KEY (`id`)) ENGINE = InnoDB;";
           con.query(sql, function (err, result) {
             if (err) throw err;
             logger.info("Table created");
@@ -127,6 +203,11 @@ function checkIfMySQLStructureIsReady() {
           con.query(newSql, function (err, result) {
             if (err) throw err;
             logger.info("Usertable created");
+          });
+
+          con.query(newSqlMailVeri, function (err, result) {
+            if (err) throw err;
+            logger.info("Email verification table created");
           });
         } else {
           // We cannot do that. Welp.
@@ -170,38 +251,104 @@ app.get("/", function (req, res) {
 app.post("/login", function (req, res) {
   const password = req.body.pass;
   const mail = req.body.email;
+  var sess = req.session;
   console.log(req.body.pass);
-  
-  // Check if okay
-  if(mail != undefined && mail != "" && password != undefined && password != ""){
 
-    const data = fs.readFileSync("templates/genericError.html", "utf8");
-    var displayText =
-      "There is no error";
+  // Check if okay
+  if (
+    mail != undefined &&
+    mail != "" &&
+    password != undefined &&
+    password != ""
+  ) {
+    const mailRegex =
+      /(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/;
+    if (mailRegex.test(mail)) {
+      const stmt = "SELECT * FROM users WHERE email='" + mail + "';";
+      con.query(stmt, function (err, result, fields) {
+        if (err) throw err; // TODO proper error page
+        if (result.length == 0) {
+          const data = fs.readFileSync("templates/login.html", "utf8");
+          res.send(
+            Eta.render(data, {
+              author: author,
+              desc: desc,
+              siteTitel: sitePrefix + "Ok",
+              fontawesomeKey: fontawesomeKey,
+              error: true,
+              errorMessage: "This user does not exist!",
+            })
+          );
+        } else {
+          bcrypt.compare(
+            password,
+            result[0].passwordHash,
+            function (error, response) {
+              if (response) {
+                // Login okay
+                sess.username = result[0].username;
+                sess.id = result[0].id;
+                sess.mail = result[0].email;
+
+                const data = fs.readFileSync("templates/redirect.html", "utf8");
+                res.send(
+                  Eta.render(data, {
+                    author: author,
+                    desc: desc,
+                    siteTitel: sitePrefix + "Ok",
+                    fontawesomeKey: fontawesomeKey,
+                    url: "/profile",
+                  })
+                );
+              } else {
+                // Password falsch
+                const data = fs.readFileSync("templates/login.html", "utf8");
+                res.send(
+                  Eta.render(data, {
+                    author: author,
+                    desc: desc,
+                    siteTitel: sitePrefix + "Ok",
+                    fontawesomeKey: fontawesomeKey,
+                    error: true,
+                    errorMessage: "The given password is wrong.",
+                  })
+                );
+              }
+            }
+          );
+        }
+      });
+    } else {
+      const data = fs.readFileSync("templates/login.html", "utf8");
       res.send(
         Eta.render(data, {
           author: author,
           desc: desc,
           siteTitel: sitePrefix + "Ok",
           fontawesomeKey: fontawesomeKey,
-          displayText: displayText,
+          error: true,
+          errorMessage: "The given E-Mail is invalid.",
         })
       );
-
-  }else{
-    logger.warn("The login form did not sent all data. Dump: \n Password: " + password + " \n E-Mail: " + mail)
+    }
+  } else {
+    logger.warn(
+      "The login form did not sent all data. Dump: \n Password: " +
+        password +
+        " \n E-Mail: " +
+        mail
+    );
     const data = fs.readFileSync("templates/genericError.html", "utf8");
-    var displayText =
-      "The form did not sent all the information needed.";
-      res.send(
-        Eta.render(data, {
-          author: author,
-          desc: desc,
-          siteTitel: sitePrefix + "Error",
-          fontawesomeKey: fontawesomeKey,
-          displayText: displayText,
-        })
-      );
+    var displayText = "The form did not sent all the information needed.";
+    res.send(
+      Eta.render(data, {
+        author: author,
+        desc: desc,
+        siteTitel: sitePrefix + "Error",
+        fontawesomeKey: fontawesomeKey,
+        displayText: displayText,
+      })
+    );
   }
 });
 
@@ -241,9 +388,68 @@ app.get("/login", function (req, res) {
   }
 });
 
+app.get("/profile", function (req, res) {
+  if (mysqlIsUpAndOkay) {
+    if (req.session.username != undefined) {
+      var Hour = new Date().getHours();
+      var greeting = "Good night, ";
+      if (Hour > 18) {
+        greeting = "Good evening, "
+      } else if (Hour > 13) {
+        greeting = "Good afternoon, ";
+      } else if (Hour > 5) {
+        greeting = "Good morning, ";
+      }
+      greeting += req.session.username
+      const hash = crypto.createHash('md5').update(req.session.mail.replace(" ", "").toLowerCase()).digest('hex');
+      gravatarURL = "https://www.gravatar.com/avatar/" + hash
+      const data = fs.readFileSync("templates/profile.html", "utf8");
+      res.send(
+        Eta.render(data, {
+          author: author,
+          desc: desc,
+          siteTitel: sitePrefix + "Profile",
+          fontawesomeKey: fontawesomeKey,
+          greeting: greeting,
+          gravatarURL: gravatarURL
+        })
+      );
+    } else {
+      const data = fs.readFileSync("templates/redirect.html", "utf8");
+      res.send(
+        Eta.render(data, {
+          author: author,
+          desc: desc,
+          siteTitel: sitePrefix + "Profile",
+          fontawesomeKey: fontawesomeKey,
+          url: "/login",
+        })
+      );
+    }
+  } else {
+    const data = fs.readFileSync("templates/dbError.html", "utf8");
+    var displayText =
+      "This might be an artifact of a recent restart. Maybe wait a few minutes and reload this page.";
+    if (startUpTime + 60 <= Math.floor(new Date().getTime() / 1000)) {
+      displayText =
+        "The server failed to connect to the MySQL server. This means it was unable to load any data.";
+    }
+    if (mySQLstate == 1) {
+      displayText =
+        "There is a problem with the database servers setup. Please check the log for more info.";
+    }
 
-
-
+    res.send(
+      Eta.render(data, {
+        author: author,
+        desc: desc,
+        siteTitel: sitePrefix + "Error",
+        fontawesomeKey: fontawesomeKey,
+        displayText: displayText,
+      })
+    );
+  }
+});
 
 app.get("/register", function (req, res) {
   if (mysqlIsUpAndOkay) {
@@ -254,7 +460,7 @@ app.get("/register", function (req, res) {
         desc: desc,
         siteTitel: sitePrefix + "Register",
         fontawesomeKey: fontawesomeKey,
-        sitekey: hCaptcha.sitekey
+        sitekey: hCaptcha.sitekey,
       })
     );
   } else {
@@ -281,44 +487,157 @@ app.get("/register", function (req, res) {
     );
   }
 });
-
 
 app.post("/register", function (req, res) {
   if (mysqlIsUpAndOkay) {
-    console.log(req.body)
+    var sess = req.session;
     var resu;
-    verify(hCaptcha.secret, req.body["g-recaptcha-response"])
-  .then((data) => resu = data)
-  .catch(setTimeout(() => {
-    const data = fs.readFileSync("templates/genericError.html", "utf8");
+    verify(hCaptcha.secret, req.body["g-recaptcha-response"]).then(
+      (data) => (resu = data)
+    );
+    /*.catch(setTimeout(() => {
+          //if(resu.success == false){
+            console.log("HERE");
+            const data = fs.readFileSync("templates/genericError.html", "utf8");
+            resu = "-1";
+            con
+            res.send(
+              Eta.render(data, {
+                author: author,
+                desc: desc,
+                siteTitel: sitePrefix + "Error",
+                fontawesomeKey: fontawesomeKey,
+                displayText: "There was an issue with the Captcha",
+              })
+            );
+          //}
+          
+        }, 0)
+      );*/
+
+    if (req.body.pass == req.body.pass2) {
+      const mailRegex =
+        /(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/;
+      if (mailRegex.test(req.body.email)) {
+        setTimeout(() => {
+          console.log(resu);
+          if (resu.success == true) {
+            bcrypt.hash(req.body.pass, saltRounds, (err, hash) => {
+              const data = fs.readFileSync(
+                "templates/genericError.html",
+                "utf8"
+              );
+              // SQL INSERT
+
+              var stmt =
+                "INSERT INTO users(email, username, passwordHash) VALUES(?, ?, ?)";
+              var stmt2 =
+                "INSERT INTO mailverification(targetMail, userID, token) VALUES(?, ?, ?)";
+              crypto.randomBytes(48, function (err, buffer) {
+                var token = buffer.toString("hex");
+                con.query(
+                  stmt,
+                  [req.body.email, req.body.username, token],
+                  (err, results1, fields) => {
+                    if (err) {
+                      res.send(
+                        Eta.render(data, {
+                          author: author,
+                          desc: desc,
+                          siteTitel: sitePrefix + "Error",
+                          fontawesomeKey: fontawesomeKey,
+                          displayText:
+                            "An error occured while creating your account.",
+                        })
+                      );
+                      return console.error(err.message);
+                    } else {
+                      // Create mail verification
+                      con.query(
+                        stmt2,
+                        [req.body.email, results1.insertId, hash],
+                        (err, results, fields) => {
+                          if (err) {
+                            res.send(
+                              Eta.render(data, {
+                                author: author,
+                                desc: desc,
+                                siteTitel: sitePrefix + "Error",
+                                fontawesomeKey: fontawesomeKey,
+                                displayText:
+                                  "An error occured while creating your account.",
+                              })
+                            );
+                            return console.error(err.message);
+                          } else {
+                            sess.username = req.body.username;
+                            sess.id = results1.insertId;
+                            sess.mail = req.body.email;
+                            // get inserted id
+                            logger.info("Inserted Id:" + results.insertId);
+                            res.send(
+                              Eta.render(data, {
+                                author: author,
+                                desc: desc,
+                                siteTitel: sitePrefix + "Error",
+                                fontawesomeKey: fontawesomeKey,
+                                displayText: "OK " + hash,
+                              })
+                            );
+                            sendVerificationMail(results.insertId);
+                          }
+                        }
+                      );
+                    }
+                  }
+                );
+              });
+            });
+          } else {
+            const data = fs.readFileSync("templates/register.html", "utf8");
+            res.send(
+              Eta.render(data, {
+                author: author,
+                desc: desc,
+                siteTitel: sitePrefix + "Register",
+                fontawesomeKey: fontawesomeKey,
+                sitekey: hCaptcha.sitekey,
+                error: true,
+                errorMessage: "You failed the captcha, please try again.",
+              })
+            );
+          }
+        }, 200);
+      } else {
+        // Passwords don't match up
+        const data = fs.readFileSync("templates/register.html", "utf8");
+        res.send(
+          Eta.render(data, {
+            author: author,
+            desc: desc,
+            siteTitel: sitePrefix + "Register",
+            fontawesomeKey: fontawesomeKey,
+            sitekey: hCaptcha.sitekey,
+            error: true,
+            errorMessage: "The E-Mail given is not valid",
+          })
+        );
+      }
+    } else {
+      // Passwords don't match up
+      const data = fs.readFileSync("templates/register.html", "utf8");
       res.send(
         Eta.render(data, {
           author: author,
           desc: desc,
-          siteTitel: sitePrefix + "Error",
+          siteTitel: sitePrefix + "Register",
           fontawesomeKey: fontawesomeKey,
-          displayText: "There was an issue with the Captcha",
-        })
-      );
-  }, 0));
-  setTimeout(() => {
-    console.log(resu)
-    if(resu.success == true){
-      res.send("OK")
-    }else{
-      const data = fs.readFileSync("templates/genericError.html", "utf8");
-      res.send(
-        Eta.render(data, {
-          author: author,
-          desc: desc,
-          siteTitel: sitePrefix + "Error",
-          fontawesomeKey: fontawesomeKey,
-          displayText: "The captcha returned a negativ result",
+          sitekey: hCaptcha.sitekey,
+          error: true,
+          errorMessage: "The password have to match up.",
         })
       );
     }
-  }, 200);
-  
   } else {
     const data = fs.readFileSync("templates/dbError.html", "utf8");
     var displayText =
@@ -344,8 +663,70 @@ app.post("/register", function (req, res) {
   }
 });
 
+// Routes
+app.get("/verify*", function (req, res) {
+  console.log(req.url.split("/")[2]);
+  const data = fs.readFileSync("templates/genericError.html", "utf8");
+  const stmt = "SELECT * FROM mailverification WHERE token = ?;";
+
+  con.query(stmt, [req.url.split("/")[2]], function (err, result, fields) {
+    if (err) {
+      res.status(404);
+      res.send(
+        JSON.stringify({ state: "Failed", message: "Database error occured" })
+      );
+      logger.error(err);
+    } else {
+      if (result.length == 0) {
+        res.status(404);
+        res.send(
+          JSON.stringify({ state: "Failed", message: "Link already done" })
+        );
+      } else {
+        console.log(result);
+        res.status(200);
+        stmt2 = "DELETE FROM mailverification WHERE id=?";
+        console.log(result[0].id);
+        con.query(stmt2, [result[0].id], function (err, result, fields) {
+          // TODO handling of this
+          //logger.debug(err)
+          //console.log(result)
+        });
+        stmt3 = "UPDATE users SET verificationState=1 WHERE email=?";
+        con.query(
+          stmt3,
+          [result[0].targetMail],
+          function (err, result, fields) {
+            // TODO handling of this
+            //logger.debug(err)
+            //console.log(result)
+          }
+        );
+        res.send(JSON.stringify({ state: "OK", message: "Done!" }));
+      }
+    }
+  });
+});
+
+app.get("/logout", function (req, res) {
+  req.session.destroy();
+ const data = fs.readFileSync("templates/redirect.html", "utf8");
+  res.send(
+    Eta.render(data, {
+      author: author,
+      desc: desc,
+      siteTitel: sitePrefix + "Logout",
+      fontawesomeKey: fontawesomeKey,
+      url: "/",
+    })
+  );
+
+});
 
 
+app.get("/debug/showSessionInfo", function (req, res) {
+  res.send(JSON.stringify(req.session));
+});
 
 app.get("/map", function (req, res) {
   if (mysqlIsUpAndOkay) {

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <!-- Basic Page Needs
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta charset="utf-8">
+  <title><%= it.siteTitel %></title>
+  <meta name="description" content="<%= it.desc %>">
+  <meta name="author" content="<%= it.author %>">
+
+  <!-- Mobile Specific Metas
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- FONT
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <!--<link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">-->
+
+  <!-- CSS
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/barebones.css">
+
+  <!-- Favicon
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link rel="icon" type="image/png" href="images/favicon-16.png">
+
+
+  <script async defer src="/js/site.js"></script>
+  <script src="https://kit.fontawesome.com/<%= it.fontawesomeKey %>.js" crossorigin="anonymous"></script>
+
+</head>
+<body>
+
+  <!-- Primary Page Layout
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <header>
+    <a class="rightMount" href="/logout"><i class="fas fa-sign-out-alt"></i></a>
+  </header>
+  <div class="grid-container thirds" style="margin-top: 5%;">
+    <div></div>
+      <div>
+        <img src="<%= it.gravatarURL %>">
+        <h1><%= it.greeting %></h1>
+        <p>This site is still a bit of a placeholder. But it exists.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- End Document
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+</body>
+</html>
