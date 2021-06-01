@@ -228,6 +228,7 @@ con.connect(function (err) {
   if (err) {
     mysqlIsUpAndOkay = false;
     logger.error("Connction to MySQL failed");
+    console.log(err)
   } else {
     logger.info("Mysql is ready.");
     mysqlIsUpAndOkay = true;
@@ -765,6 +766,45 @@ app.get("/map", function (req, res) {
   }
 });
 
+
+
+app.get("/createElevator", function (req, res) {
+  if (mysqlIsUpAndOkay) {
+    const data = fs.readFileSync("templates/createElevator.html", "utf8");
+    res.send(
+      Eta.render(data, {
+        author: author,
+        desc: desc,
+        siteTitel: sitePrefix + "New elevator",
+        fontawesomeKey: fontawesomeKey,
+        mapboxAccessToken: mapboxAccessToken,
+      })
+    );
+  } else {
+    const data = fs.readFileSync("templates/dbError.html", "utf8");
+    var displayText =
+      "This might be an artifact of a recent restart. Maybe wait a few minutes and reload this page.";
+    if (startUpTime + 60 <= Math.floor(new Date().getTime() / 1000)) {
+      displayText =
+        "The server failed to connect to the MySQL server. This means it was unable to load any data.";
+    }
+    if (mySQLstate == 1) {
+      displayText =
+        "There is a problem with the database servers setup. Please check the log for more info.";
+    }
+
+    res.send(
+      Eta.render(data, {
+        author: author,
+        desc: desc,
+        siteTitel: sitePrefix + "Error",
+        fontawesomeKey: fontawesomeKey,
+        displayText: displayText,
+      })
+    );
+  }
+});
+
 app.get("/api/getElevators", function (req, res) {
   console.log(req.query);
   if (
@@ -941,6 +981,7 @@ setInterval(() => {
       if (err) {
         mysqlIsUpAndOkay = false;
         logger.error("Connction to MySQL failed");
+        console.log(err)
       } else {
         logger.info("Mysql is ready.");
         mysqlIsUpAndOkay = true;
