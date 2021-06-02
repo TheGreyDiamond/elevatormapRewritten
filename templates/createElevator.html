@@ -1,164 +1,201 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <!-- Basic Page Needs
+
+<head>
+  <!-- Basic Page Needs
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-    <meta charset="utf-8" />
-    <title><%= it.siteTitel %></title>
-    <meta name="description" content="<%= it.desc %>" />
-    <meta name="author" content="<%= it.author %>" />
+  <meta charset="utf-8" />
+  <title>
+    <%= it.siteTitel %>
+  </title>
+  <meta name="description" content="<%= it.desc %>" />
+  <meta name="author" content="<%= it.author %>" />
 
-    <!-- Mobile Specific Metas
+  <!-- Mobile Specific Metas
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- CSS
+  <!-- CSS
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-    <link rel="stylesheet" href="css/normalize.css" />
-    <link rel="stylesheet" href="css/barebones.css" />
-    <link rel="stylesheet" href="css/skeleton-legacy.css" />
-    <link rel="stylesheet" href="css/mainMap.css" />
+  <link rel="stylesheet" href="css/normalize.css" />
+  <link rel="stylesheet" href="css/barebones.css" />
+  <link rel="stylesheet" href="css/skeleton-legacy.css" />
+  <link rel="stylesheet" href="css/mainMap.css" />
 
-    <!-- Favicon
+  <!-- Favicon
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-    <link rel="icon" type="image/png" href="images/favicon-16.png" />
+  <link rel="icon" type="image/png" href="images/favicon-16.png" />
 
-    <script async defer src="/js/site.js"></script>
-    <script
-      src="https://kit.fontawesome.com/<%= it.fontawesomeKey %>.js"
-      crossorigin="anonymous"
-    ></script>
+  <script async defer src="/js/site.js"></script>
+  <script src="https://kit.fontawesome.com/<%= it.fontawesomeKey %>.js" crossorigin="anonymous"></script>
 
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
-      integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
-      crossorigin=""
-    />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+    integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+    crossorigin="" />
 
-    <!-- Make sure you put this AFTER Leaflet's CSS -->
-    <script
-      src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
-      integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
-      crossorigin=""
-    ></script>
+  <!-- Make sure you put this AFTER Leaflet's CSS -->
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+    integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+    crossorigin=""></script>
 
-    <link rel="stylesheet" href="./leafletCluster/dist/MarkerCluster.css" />
-    <link
-      rel="stylesheet"
-      href="./leafletCluster/dist/MarkerCluster.Default.css"
-    />
+  <link rel="stylesheet" href="./leafletCluster/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="./leafletCluster/dist/MarkerCluster.Default.css" />
 
-    <script src="./leafletCluster/dist/leaflet.markercluster.js"></script>
-  </head>
-  <body>
-    <!-- Primary Page Layout
+  <script src="./leafletCluster/dist/leaflet.markercluster.js"></script>
+</head>
+
+<body>
+  <!-- Primary Page Layout
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-    <div style="margin: 0px">
-      <div class="map" id="map"></div>
+  <div style="margin: 0px">
+    <div class="map" id="map"></div>
 
-      <div class="inspector" id="inspector">
-        <br /><br /><br /><br />
-        <center>
-         <h3>Create a new elevator</h3>
+    <div class="inspector" id="inspector">
+      <br /><br /><br /><br />
+      <center>
+        <h3>Create a new elevator</h3>
 
-        </center>
-         <h5>1. Add a location</h5>
+      </center>
+      <step id="step1">
+        <h5>1. Add a location</h5>
         <p>Click anywhere on the map to create a pin. You can also use direct input to add cordinates.</p>
         <!-- TODO: LatLng fields-->
-      </div>
+        <label for="lat">Latlitude: </label><input type="number" name="lat" id="lat">
+        <label for="lng">Longlitude: </label><input type="number" name="lng" id="lng">
+        <TODO>TODO: Display data of fields on map</TODO>
+        <button onclick="nextDialogePage()">Next step <i class="fas fa-arrow-right"></i></button>
+      </step>
+      <step id="step2" style="display: none;">
+<h5>2. Add general information about the elevator</h5>
+<p>You may add images in the last step. Now please enter general information about the elevator.</p>
+<TODO>TODO: Add fields for input of user data</TODO>
+<button onclick="prevPage()">Go back one step <i class="fas fa-arrow-left"></i></button>
+<button onclick="nextDialogePage()">Next step <i class="fas fa-arrow-right"></i></button>
+      </step>
     </div>
+  </div>
 
-    <aside>
-      <i
-        style="color: black; cursor: pointer"
-        class="fas fa-map-marker-alt"
-        onclick="home()"
-      ></i>
-    </aside>
+  <aside>
+    <i style="color: black; cursor: pointer" class="fas fa-map-marker-alt" onclick="home()"></i>
+  </aside>
+  <script>
+    var currentPage = 0;
+    function updateDialog() {
+      if (currentPage == 0) {
+        document.getElementById("step1").style.display= 'block';
+        document.getElementById("step2").style.display= 'none';
+      }
+      if (currentPage == 1) {
+        document.getElementById("step1").style.display= 'none';
+        document.getElementById("step2").style.display= 'block';
+      }
+    }
+    function nextDialogePage() {
+      currentPage++;
+      updateDialog();
+    }
+    function prevPage() {
+      currentPage--;
+      updateDialog();
+    }
+  </script>
 
-    <!-- End Document
+  <!-- End Document
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-    <script type="text/javascript">
-      var amountOfImages = 0;
-      var markers = L.markerClusterGroup();
-      slideIndex = 1;
+  <script type="text/javascript">
+    var amountOfImages = 0;
+    var markers = L.markerClusterGroup();
+    slideIndex = 1;
 
-      var mymap = L.map("map").setView([51.505, -0.09], 50);
+    var mymap = L.map("map").setView([51.505, -0.09], 50);
 
-      L.tileLayer(
-        "https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=<%= it.mapboxAccessToken %>",
-        {
-          attribution:
-            'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-          maxZoom: 18,
-          id: "mapbox/streets-v11",
-          tileSize: 512,
-          zoomOffset: -1,
-          accessToken: "<%= it.mapboxAccessToken %>",
-        }
-      ).addTo(mymap);
+    L.tileLayer(
+      "https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=<%= it.mapboxAccessToken %>",
+      {
+        attribution:
+          'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+        maxZoom: 18,
+        id: "mapbox/streets-v11",
+        tileSize: 512,
+        zoomOffset: -1,
+        accessToken: "<%= it.mapboxAccessToken %>",
+      }
+    ).addTo(mymap);
 
-      theMarker = L.Marker.extend({
-        options: {
-          id: "-1",
-        },
+    theMarker = L.Marker.extend({
+      options: {
+        id: "-1",
+      },
+    });
+
+    function showPosition(position) {
+      console.log(position.coords);
+
+      mymap.setView(
+        new L.LatLng(position.coords.latitude, position.coords.longitude),
+        10
+      );
+      // mymap.setView(new L.LatLng(10.737, -73.923), 8);
+    }
+
+    function home() {
+      if (navigator.geolocation) {
+        setTimeout(function () {
+          navigator.geolocation.getCurrentPosition(showPosition);
+        }, 200);
+      } else {
+        console.warn("Geolocation of user could not be fetched");
+      }
+    }
+    home()
+
+    mymap.on('click', function (e) {
+      markers.clearLayers();
+      var coord = e.latlng;
+      var lat = coord.lat;
+      var lng = coord.lng;
+      var marker = new theMarker([lat, lng])
+      //marker.addTo(mymap)
+      markers.addLayer(marker);
+      markers.addTo(mymap);
+      document.getElementById("lat").value = lat
+      document.getElementById("lng").value = lng
+      console.log("You clicked the map at latitude: " + lat + " and longitude: " + lng);
+    });
+
+
+    function httpGet(theUrl) {
+      var xmlHttp = new XMLHttpRequest();
+      xmlHttp.open("GET", theUrl, false); // false for synchronous request
+      xmlHttp.send(null);
+      return xmlHttp.responseText;
+    }
+
+    function home() {
+      if (navigator.geolocation) {
+        setTimeout(function () {
+          navigator.geolocation.getCurrentPosition(showPosition);
+        }, 200);
+      } else {
+        console.warn("Geolocation of user could not be fetched");
+      }
+    }
+
+    home();
+
+    function addPin(item, index) {
+      var marker = new theMarker([item.lat, item.lng], {
+        id: item.id,
+      }).on("click", onClick);
+      // var marker = new L.Marker()
+      //marker.addTo(mymap).on('click', onClick);
+      markers.on("clusterclick", function (a) {
+        //alert('cluster ' + a.layer.getAllChildMarkers().length);
       });
+      markers.addLayer(marker);
+    }
 
-      function showPosition(position) {
-        console.log(position.coords);
+  </script>
+</body>
 
-        mymap.setView(
-          new L.LatLng(position.coords.latitude, position.coords.longitude),
-          10
-        );
-        // mymap.setView(new L.LatLng(10.737, -73.923), 8);
-      }
-
-      mymap.on('click', function(e){
-        markers.clearLayers();
-        var coord = e.latlng;
-        var lat = coord.lat;
-        var lng = coord.lng;
-        var marker = new theMarker([lat, lng])
-        //marker.addTo(mymap)
-        markers.addLayer(marker);
-        markers.addTo(mymap);
-        console.log("You clicked the map at latitude: " + lat + " and longitude: " + lng);
-        });
-
-
-      function httpGet(theUrl) {
-        var xmlHttp = new XMLHttpRequest();
-        xmlHttp.open("GET", theUrl, false); // false for synchronous request
-        xmlHttp.send(null);
-        return xmlHttp.responseText;
-      }
-
-      function home() {
-        if (navigator.geolocation) {
-          setTimeout(function () {
-            navigator.geolocation.getCurrentPosition(showPosition);
-          }, 200);
-        } else {
-          console.warn("Geolocation of user could not be fetched");
-        }
-      }
-
-      home();
-
-      function addPin(item, index) {
-        var marker = new theMarker([item.lat, item.lng], {
-          id: item.id,
-        }).on("click", onClick);
-        // var marker = new L.Marker()
-        //marker.addTo(mymap).on('click', onClick);
-        markers.on("clusterclick", function (a) {
-          //alert('cluster ' + a.layer.getAllChildMarkers().length);
-        });
-        markers.addLayer(marker);
-      }
-
-    </script>
-  </body>
 </html>
