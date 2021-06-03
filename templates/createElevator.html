@@ -42,11 +42,17 @@
   <link rel="stylesheet" href="./leafletCluster/dist/MarkerCluster.Default.css" />
 
   <script src="./leafletCluster/dist/leaflet.markercluster.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
+
+  <script src="./js/site.js"></script>
 </head>
 
 <body>
   <!-- Primary Page Layout
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <div id="overlay" onclick="off()">
+    <div id="text"><TODO>Add this dialoge</TODO></div>
+  </div>
   <div style="margin: 0px">
     <div class="map" id="map"></div>
 
@@ -59,18 +65,52 @@
       <step id="step1">
         <h5>1. Add a location</h5>
         <p>Click anywhere on the map to create a pin. You can also use direct input to add cordinates.</p>
-        <!-- TODO: LatLng fields-->
         <label for="lat">Latlitude: </label><input type="number" name="lat" id="lat">
         <label for="lng">Longlitude: </label><input type="number" name="lng" id="lng">
-        <TODO>TODO: Display data of fields on map</TODO>
-        <button onclick="nextDialogePage()">Next step <i class="fas fa-arrow-right"></i></button>
+        <br>
+        <button onclick="nextDialogePage()" class="button-primary">Next step <i class="fas fa-arrow-right"></i></button>
       </step>
       <step id="step2" style="display: none;">
-<h5>2. Add general information about the elevator</h5>
-<p>You may add images in the last step. Now please enter general information about the elevator.</p>
-<TODO>TODO: Add fields for input of user data</TODO>
-<button onclick="prevPage()">Go back one step <i class="fas fa-arrow-left"></i></button>
-<button onclick="nextDialogePage()">Next step <i class="fas fa-arrow-right"></i></button>
+        <h5>2. Add general information about the elevator</h5>
+        <p>You may add images in the last step. Now please enter general information about the elevator.</p>
+        <label for="type">Elevator type:</label>
+
+        <select name="type" id="type">
+          <option value="0">Hydraulic</option>
+          <option value="1">Wiredriven, motor in shaft</option>
+          <option value="2">Wiredriven, motor in motorroom</option>
+          <option value="3">Unknown</option>
+        </select>
+        <label for="visit">Visitabilty:</label>
+        <select name="visit" id="visit">
+          <option value="1">Public</option>
+          <option value="2">On private property</option>
+          <option value="3">Public but locked</option>
+        </select>
+        <label for="pepl">Max. passangers:</label>
+        <input type="number" step="1" min="1" id="pepl" name="pepl" value=4>
+        <label for="weig">Max. Weight (kg):</label>
+        <input type="number" step="1" min="1" id="weig" name="weig" value=0>
+
+        <br>
+        <button onclick="prevPage()">Go back one step <i class="fas fa-arrow-left"></i></button>
+        <button onclick="nextDialogePage()" class="button-primary">Next step <i class="fas fa-arrow-right"></i></button>
+      </step>
+      <step id="step3" style="display: none;">
+        <h5>3. Add a description</h5>
+        <p>Add a description to the elevator. You may not use this field for advertisment.</p>
+        <textarea id="description"></textarea>
+        <br>
+        <button onclick="prevPage()">Go back one step <i class="fas fa-arrow-left"></i></button>
+        <button onclick="nextDialogePage()" class="button-primary">Next step <i class="fas fa-arrow-right"></i></button>
+      </step>
+      <step id="step4" style="display: none;">
+        <h5>4. Add images</h5>
+        <p>This is the last step. You can now add images. <b>Make sure no personal information is visibel in the image.</b></p>
+        <input type="file" id="myFile" name="files" multiple>
+        <br>
+        <button onclick="prevPage()">Go back one step <i class="fas fa-arrow-left"></i></button>
+        <button onclick="nextDialogePage()" class="button-primary">Next step <i class="fas fa-arrow-right"></i></button>
       </step>
     </div>
   </div>
@@ -78,17 +118,65 @@
   <aside>
     <i style="color: black; cursor: pointer" class="fas fa-map-marker-alt" onclick="home()"></i>
   </aside>
-  <script>
+  <script type="text/javascript">
+    dataBlock = Cookies.get("tempStore");
+    if(dataBlock == undefined){
+      dataBlock = {};
+    }else{
+      try{
+        dataBlock = JSON.parse(dataBlock)
+        document.getElementById("lat").value = dataBlock["lat"]
+        document.getElementById("lng").value = dataBlock["lng"]
+        document.getElementById("type").value = dataBlock["type"] 
+        document.getElementById("visit").value = dataBlock["visit"]
+        document.getElementById("pepl").value = dataBlock["pepl"]
+        document.getElementById("weig").value = dataBlock["weig"]
+        document.getElementById("description").value = dataBlock["description"]
+        on()
+      }catch(ex){
+        dataBlock = {}
+      } 
+    }
+
     var currentPage = 0;
+    function saveValues(){
+      dataBlock["lat"] = document.getElementById("lat").value
+      dataBlock["lng"] = document.getElementById("lng").value
+      dataBlock["type"] = document.getElementById("type").value
+      dataBlock["visit"] = document.getElementById("visit").value
+      dataBlock["pepl"] = document.getElementById("pepl").value
+      dataBlock["weig"] = document.getElementById("weig").value
+      dataBlock["description"] = document.getElementById("description").value
+      Cookies.set('tempStore', JSON.stringify(dataBlock))
+    }
     function updateDialog() {
       if (currentPage == 0) {
-        document.getElementById("step1").style.display= 'block';
-        document.getElementById("step2").style.display= 'none';
+        document.getElementById("step1").style.display = 'block';
+        document.getElementById("step2").style.display = 'none';
+        document.getElementById("step3").style.display = 'none';
+        document.getElementById("step4").style.display = 'none';
       }
       if (currentPage == 1) {
-        document.getElementById("step1").style.display= 'none';
-        document.getElementById("step2").style.display= 'block';
+        document.getElementById("step1").style.display = 'none';
+        document.getElementById("step2").style.display = 'block';
+        document.getElementById("step3").style.display = 'none';
+        document.getElementById("step4").style.display = 'none';
       }
+      if (currentPage == 2) {
+        document.getElementById("step1").style.display = 'none';
+        document.getElementById("step2").style.display = 'none';
+        document.getElementById("step3").style.display = 'block';
+        document.getElementById("step4").style.display = 'none';
+      }
+      if (currentPage == 3) {
+        document.getElementById("step1").style.display = 'none';
+        document.getElementById("step2").style.display = 'none';
+        document.getElementById("step3").style.display = 'none';
+        document.getElementById("step4").style.display = 'block';
+      }
+      saveValues();
+      console.log(dataBlock)
+
     }
     function nextDialogePage() {
       currentPage++;
@@ -98,11 +186,38 @@
       currentPage--;
       updateDialog();
     }
+    
   </script>
 
   <!-- End Document
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
   <script type="text/javascript">
+
+    var latElm = document.getElementById("lat");
+    var lngElm = document.getElementById("lng");
+
+    latElm.addEventListener('input', function (evt) {
+      markers.clearLayers();
+      console.log(evt.target.value)
+      const lat = evt.target.value;
+      const lng = lngElm.value;
+      var marker = new theMarker([lat, lng])
+      //marker.addTo(mymap)
+      markers.addLayer(marker);
+      markers.addTo(mymap);
+    });
+
+    lngElm.addEventListener('input', function (evt) {
+      markers.clearLayers();
+      console.log(evt.target.value)
+      const lat = latElm.value;
+      const lng = evt.target.value;
+      var marker = new theMarker([lat, lng])
+      //marker.addTo(mymap)
+      markers.addLayer(marker);
+      markers.addTo(mymap);
+    });
+
     var amountOfImages = 0;
     var markers = L.markerClusterGroup();
     slideIndex = 1;
@@ -138,15 +253,6 @@
       // mymap.setView(new L.LatLng(10.737, -73.923), 8);
     }
 
-    function home() {
-      if (navigator.geolocation) {
-        setTimeout(function () {
-          navigator.geolocation.getCurrentPosition(showPosition);
-        }, 200);
-      } else {
-        console.warn("Geolocation of user could not be fetched");
-      }
-    }
     home()
 
     mymap.on('click', function (e) {
@@ -162,26 +268,6 @@
       document.getElementById("lng").value = lng
       console.log("You clicked the map at latitude: " + lat + " and longitude: " + lng);
     });
-
-
-    function httpGet(theUrl) {
-      var xmlHttp = new XMLHttpRequest();
-      xmlHttp.open("GET", theUrl, false); // false for synchronous request
-      xmlHttp.send(null);
-      return xmlHttp.responseText;
-    }
-
-    function home() {
-      if (navigator.geolocation) {
-        setTimeout(function () {
-          navigator.geolocation.getCurrentPosition(showPosition);
-        }, 200);
-      } else {
-        console.warn("Geolocation of user could not be fetched");
-      }
-    }
-
-    home();
 
     function addPin(item, index) {
       var marker = new theMarker([item.lat, item.lng], {

@@ -1,24 +1,24 @@
-function toggleTheme() {
-
-        var prettifyDark = document.getElementById('prettify-dark')
-        var sheets = document.styleSheets
-        
-        // temporariily set transition class on html element
-        //document.documentElement.classList.add('transition-theme')
-        
-        // change data-theme
-        //if (target.classList.contains('darkTheme')) {
-            document.documentElement.setAttribute("data-theme", "dark")
-            //prettifyDark.removeAttribute('disabled')
-            //prettifyDark.disabled = false
-        /*} else {
-            document.documentElement.removeAttribute("data-theme", "dark")
-            prettifyDark.disabled = true
-        }*/
-        
-        // remove transition class
-        window.setTimeout(function() {
-            document.documentElement.classList.remove('transition-theme')
-        }, 1000)
-    
+function httpGet(theUrl) {
+  var xmlHttp = new XMLHttpRequest();
+  xmlHttp.open("GET", theUrl, false); // false for synchronous request
+  xmlHttp.send(null);
+  return xmlHttp.responseText;
 }
+
+function home() {
+  if (navigator.geolocation) {
+    setTimeout(function () {
+      navigator.geolocation.getCurrentPosition(showPosition);
+    }, 200);
+  } else {
+    console.warn("Geolocation of user could not be fetched");
+  }
+}
+
+function on() {
+    document.getElementById("overlay").style.display = "block";
+  }
+  
+  function off() {
+    document.getElementById("overlay").style.display = "none";
+  }
