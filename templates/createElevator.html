@@ -111,9 +111,25 @@
         <h5>4. Add images</h5>
         <p>This is the last step. You can now add images. <b>Make sure no personal information is visibel in the image.</b></p>
         <input type="file" id="myFile" name="files" multiple>
+        
         <br>
         <button onclick="prevPage()">Go back one step <i class="fas fa-arrow-left"></i></button>
         <button onclick="nextDialogePage()" class="button-primary">Next step <i class="fas fa-arrow-right"></i></button>
+      </step>
+      <step class="missingAlert" id="missingAlert" style="display: none;">
+        <i class="fas fa-exclamation-triangle"></i> There are some empty fields. Please check the previous pages for empty fields!<br>
+        <button onclick="prevPage()">Go back one step <i class="fas fa-arrow-left"></i></button>
+      </step>
+      <step id="step5" style="display: none;">
+        <h5>5. Ready</h5>
+        <p>Are you sure you want to submit this elevator?</p>
+        <button style="background-color: greenyellow;" onclick="submit()"><i class="fas fa-check"></i></button>
+        
+        <button onclick="currentPage = 3; updateDialog()">Go back one step <i class="fas fa-arrow-left"></i></button>
+      </step>
+      <step id="step6" style="display: none;">
+        <h5>6. Saving</h5>
+        <br><br><center><div class="lds-ripple"><div></div><div></div></div></center>
       </step>
     </div>
   </div>
@@ -162,6 +178,11 @@
       dataBlock["description"] = document.getElementById("description").value
       Cookies.set('tempStore', JSON.stringify(dataBlock))
     }
+    function submit(){
+      currentPage = 6;
+      updateDialog()
+      saveValues()
+    }
     function updateDialog() {
       if (currentPage == 0) {
         document.getElementById("step1").style.display = 'block';
@@ -186,6 +207,46 @@
         document.getElementById("step2").style.display = 'none';
         document.getElementById("step3").style.display = 'none';
         document.getElementById("step4").style.display = 'block';
+        document.getElementById("step5").style.display = 'none';
+        document.getElementById("missingAlert").style.display = 'none';
+      }
+      if (currentPage == 4) {
+        document.getElementById("step1").style.display = 'none';
+        document.getElementById("step2").style.display = 'none';
+        document.getElementById("step3").style.display = 'none';
+        document.getElementById("step4").style.display = 'none';
+
+        containsEmpt = false;
+        for (const [key, value] of Object.entries(dataBlock)) {
+          if(value == "" || value == undefined){
+            console.log("hi")
+            console.log(key, value)
+            containsEmpt = true;
+            document.getElementById("missingAlert").style.display = 'block';
+          }
+        }
+        if(containsEmpt == false){
+          document.getElementById("missingAlert").style.display = 'none';
+          currentPage = 5;
+        }
+        console.log(containsEmpt);
+      }
+      if (currentPage == 5) {
+        document.getElementById("step1").style.display = 'none';
+        document.getElementById("step2").style.display = 'none';
+        document.getElementById("step3").style.display = 'none';
+        document.getElementById("step4").style.display = 'none';
+        document.getElementById("step5").style.display = 'block';
+        document.getElementById("missingAlert").style.display = 'none';
+      }
+      if (currentPage == 6) {
+        document.getElementById("step1").style.display = 'none';
+        document.getElementById("step2").style.display = 'none';
+        document.getElementById("step3").style.display = 'none';
+        document.getElementById("step4").style.display = 'none';
+        document.getElementById("step5").style.display = 'none';
+        document.getElementById("step6").style.display = 'block';
+        document.getElementById("missingAlert").style.display = 'none';
       }
       saveValues();
       console.log(dataBlock)
