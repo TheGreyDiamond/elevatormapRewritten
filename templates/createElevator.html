@@ -50,8 +50,11 @@
 <body>
   <!-- Primary Page Layout
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-  <div id="overlay" onclick="off()">
-    <div id="text"><TODO>Add this dialoge</TODO></div>
+  <div id="overlay">
+    <div id="text">
+      We've detected that there is a draft in your current session. Do you want to restore it?<br>
+      <button class="button-primary" onclick="restoreFunc()">Yes, restore it</button>
+      <button onclick="noRestore()">No, don't restore it</button></div>
   </div>
   <div style="margin: 0px">
     <div class="map" id="map"></div>
@@ -119,10 +122,13 @@
     <i style="color: black; cursor: pointer" class="fas fa-map-marker-alt" onclick="home()"></i>
   </aside>
   <script type="text/javascript">
-    dataBlock = Cookies.get("tempStore");
-    if(dataBlock == undefined){
-      dataBlock = {};
-    }else{
+
+    function noRestore(){
+      off();
+      Cookies.remove("tempStore")
+    }
+
+    function restoreFunc(){
       try{
         dataBlock = JSON.parse(dataBlock)
         document.getElementById("lat").value = dataBlock["lat"]
@@ -132,10 +138,17 @@
         document.getElementById("pepl").value = dataBlock["pepl"]
         document.getElementById("weig").value = dataBlock["weig"]
         document.getElementById("description").value = dataBlock["description"]
-        on()
       }catch(ex){
         dataBlock = {}
       } 
+      off()
+    }
+
+    dataBlock = Cookies.get("tempStore");
+    if(dataBlock == undefined){
+      dataBlock = {};
+    }else{
+     on()
     }
 
     var currentPage = 0;
