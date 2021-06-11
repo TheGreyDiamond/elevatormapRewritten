@@ -11,6 +11,9 @@ const csp = require(`helmet`);
 const session = require("express-session");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
+const multer = require("multer");
+
+const upload = multer({ dest: "static/uploads/" });
 
 // Inting the logger
 const logger = winston.createLogger({
@@ -57,7 +60,6 @@ app.use(csp.contentSecurityPolicy({
   },
   
 }))
-
 */
 
 // Settings
@@ -228,7 +230,7 @@ con.connect(function (err) {
   if (err) {
     mysqlIsUpAndOkay = false;
     logger.error("Connction to MySQL failed");
-    console.log(err)
+    console.log(err);
   } else {
     logger.info("Mysql is ready.");
     mysqlIsUpAndOkay = true;
@@ -395,15 +397,18 @@ app.get("/profile", function (req, res) {
       var Hour = new Date().getHours();
       var greeting = "Good night, ";
       if (Hour > 18) {
-        greeting = "Good evening, "
+        greeting = "Good evening, ";
       } else if (Hour > 13) {
         greeting = "Good afternoon, ";
       } else if (Hour > 5) {
         greeting = "Good morning, ";
       }
-      greeting += req.session.username
-      const hash = crypto.createHash('md5').update(req.session.mail.replace(" ", "").toLowerCase()).digest('hex');
-      gravatarURL = "https://www.gravatar.com/avatar/" + hash
+      greeting += req.session.username;
+      const hash = crypto
+        .createHash("md5")
+        .update(req.session.mail.replace(" ", "").toLowerCase())
+        .digest("hex");
+      gravatarURL = "https://www.gravatar.com/avatar/" + hash;
       const data = fs.readFileSync("templates/profile.html", "utf8");
       res.send(
         Eta.render(data, {
@@ -412,7 +417,7 @@ app.get("/profile", function (req, res) {
           siteTitel: sitePrefix + "Profile",
           fontawesomeKey: fontawesomeKey,
           greeting: greeting,
-          gravatarURL: gravatarURL
+          gravatarURL: gravatarURL,
         })
       );
     } else {
@@ -711,7 +716,7 @@ app.get("/verify*", function (req, res) {
 
 app.get("/logout", function (req, res) {
   req.session.destroy();
- const data = fs.readFileSync("templates/redirect.html", "utf8");
+  const data = fs.readFileSync("templates/redirect.html", "utf8");
   res.send(
     Eta.render(data, {
       author: author,
@@ -721,9 +726,7 @@ app.get("/logout", function (req, res) {
       url: "/",
     })
   );
-
 });
-
 
 app.get("/debug/showSessionInfo", function (req, res) {
   res.send(JSON.stringify(req.session));
@@ -765,8 +768,6 @@ app.get("/map", function (req, res) {
     );
   }
 });
-
-
 
 app.get("/createElevator", function (req, res) {
   if (mysqlIsUpAndOkay) {
@@ -857,8 +858,63 @@ app.get("/api/getElevators", function (req, res) {
   }
 });
 
+app.post("/api/uploadImage", upload.any(), function (req, res) {
+  //TODO: Fix file ending, add image to elevator in DB
+  console.log("UPLOAD");
+  console.log(req.files);
+  req.files[0];
+  // Save Image End
+});
+
+// returns an object with the cookies' name as keys
+const getAppCookies = (req) => {
+  // We extract the raw cookies from the request headers
+  const rawCookies = req.headers.cookie.split("; ");
+  // rawCookies = ['myapp=secretcookie, 'analytics_cookie=beacon;']
+
+  const parsedCookies = {};
+  rawCookies.forEach((rawCookie) => {
+    const parsedCookie = rawCookie.split("=");
+    // parsedCookie = ['myapp', 'secretcookie'], ['analytics_cookie', 'beacon']
+    parsedCookies[parsedCookie[0]] = parsedCookie[1];
+  });
+  return parsedCookies;
+};
+
+app.post("/api/saveNewElevatorMeta", function (req, res) {
+  console.log(req.headers.cookie);
+  tempJs = JSON.parse(decodeURIComponent(getAppCookies(req, res)["tempStore"]));
+  console.log(tempJs);
+  const sql =
+    "#INSERT INTO elevators (lat, lng, manufacturer, modell, info, visitabilty, technology, amountOfFloors, maxPassangers, maxWeight) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+  con.query(
+    sql,
+    [
+      tempJs.lat,
+      tempJs.lng,
+      tempJs.manuf,
+      tempJs.model,
+      tempJs.description,
+      tempJs.visit,
+      tempJs.type,
+      tempJs.flor,
+      tempJs.pepl,
+      tempJs.weig,
+    ],
+    function (err, result) {
+      if (err) throw err;
+      console.log("1 record inserted");
+      res.setHeader("Content-Type", "application/json");
+
+      res.send(
+        JSON.stringify({ state: "Okay", message: "Ok.", id: res.insertId })
+      );
+      res.status(200);
+    }
+  );
+});
+
 app.get("/api/getElevatorLocation", function (req, res) {
-  console.log(req.query);
   if (
     req.query.lan != undefined &&
     req.query.lat != undefined &&
@@ -981,7 +1037,7 @@ setInterval(() => {
       if (err) {
         mysqlIsUpAndOkay = false;
         logger.error("Connction to MySQL failed");
-        console.log(err)
+        console.log(err);
       } else {
         logger.info("Mysql is ready.");
         mysqlIsUpAndOkay = true;
