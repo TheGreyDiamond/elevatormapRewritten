@@ -12,6 +12,7 @@ const session = require("express-session");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const multer = require("multer");
+const path = require("path");
 
 const upload = multer({ dest: "static/uploads/" });
 
@@ -859,10 +860,66 @@ app.get("/api/getElevators", function (req, res) {
 });
 
 app.post("/api/uploadImage", upload.any(), function (req, res) {
-  //TODO: Fix file ending, add image to elevator in DB
-  console.log("UPLOAD");
-  console.log(req.files);
-  req.files[0];
+  //TODO: Fix file ending, add image to elevator in DBw
+  console.log(req.query.id)
+  i = 0;
+  const sql = 'SELECT id, images FROM elevators WHERE id=?';
+  // req.query.id
+  allImages = []
+  while (i < req.files.length) {
+    fObj = req.files[i];
+    const currentPath = path.join(fObj["path"]);
+    const destinationPath =
+      currentPath +
+      "." +
+      fObj["originalname"].split(".")[
+        fObj["originalname"].split(".").length - 1
+      ]; // Add the file end
+
+    fs.rename(currentPath, destinationPath, function (err) {
+      if (err) {
+        throw err;
+      } else {
+        console.log("Successfully moved the file!");
+      }
+    });
+    allImages.push({"path": destinationPath, "alt": "No alt was provided."})
+    i++;
+  }
+
+  con.query(
+    sql, [req.query.id],
+    function (err, result, fields) {
+      if (err) {
+        res.status(500);
+        res.send(
+          JSON.stringify({
+            state: "Failed",
+            message: "A server side error occured.",
+            results: [],
+          })
+        );
+        logger.error("The server failed to execute a request");
+        mysqlIsUpAndOkay = false;
+      } else {
+        jData = JSON.parse(result[0].images)
+        console.log(jData)
+        jData.images.push.apply(jData.images, allImages)
+        console.log(jData);
+        console.log(result);
+        var sql = "UPDATE elevators SET images = ? WHERE id = ?";
+        con.query(sql, [JSON.stringify(jData), req.query.id], function(err, result, fields){
+          if (err) {
+            console.log("Update failure")
+          }else{
+            console.log("Okay")
+          }
+
+        })
+      }
+    }
+  );
+
   // Save Image End
 });
 
@@ -886,7 +943,7 @@ app.post("/api/saveNewElevatorMeta", function (req, res) {
   tempJs = JSON.parse(decodeURIComponent(getAppCookies(req, res)["tempStore"]));
   console.log(tempJs);
   const sql =
-    "#INSERT INTO elevators (lat, lng, manufacturer, modell, info, visitabilty, technology, amountOfFloors, maxPassangers, maxWeight) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    "INSERT INTO elevators (lat, lng, manufacturer, modell, info, visitabilty, technology, amountOfFloors, maxPassangers, maxWeight, images) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '{ \"images\": []}')";
   con.query(
     sql,
     [
@@ -903,11 +960,11 @@ app.post("/api/saveNewElevatorMeta", function (req, res) {
     ],
     function (err, result) {
       if (err) throw err;
-      console.log("1 record inserted");
+      console.log("1 record inserted with id " + result.insertId);
       res.setHeader("Content-Type", "application/json");
 
       res.send(
-        JSON.stringify({ state: "Okay", message: "Ok.", id: res.insertId })
+        JSON.stringify({ state: "Okay", message: "Ok. No fault!", id: result.insertId })
       );
       res.status(200);
     }

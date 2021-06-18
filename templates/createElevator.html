@@ -218,38 +218,40 @@
       fetch('/api/saveNewElevatorMeta', options)
         .then(response => response.json())
         .then(response => {
-          console.log(response)
-        });
-      console.log($('#myFile'))
-      document.getElementById("imageUploadInfo").style.display = 'block';
-      var filesToSend = $('#myFile').prop('files').length;
-      var i = 0;
-      while (i < filesToSend) {
-        document.getElementById("imageUploadInfo").innerHTML = "Uploading image " + String(i) + "/" + String(filesToSend)
-        console.log("Files left to send: ", filesToSend - i)
-        var file_data = $('#myFile').prop('files')[i];
-        var form_data = new FormData();
-        form_data.append('file', file_data);
+          console.warn("!!!!!!!!!!!!", response)
+          document.getElementById("imageUploadInfo").style.display = 'block';
+          var filesToSend = $('#myFile').prop('files').length;
+          var i = 0;
+          while (i < filesToSend) {
+            document.getElementById("imageUploadInfo").innerHTML = "Uploading image " + String(i) + "/" + String(filesToSend)
+            console.log("Files left to send: ", filesToSend - i)
+            var file_data = $('#myFile').prop('files')[i];
+            var form_data = new FormData();
+            form_data.append('file', file_data);
 
-        console.log(file_data)
-        if (String(file_data.type).includes("image/")) {
-          $.ajax({
-            url: '/api/uploadImage',
-            dataType: 'json',
-            cache: false,
-            contentType: false,
-            processData: false,
-            data: form_data,
-            type: 'post',
-            success: function (data) {
-              alert(data);
+            console.log(file_data)
+            if (String(file_data.type).includes("image/")) {
+              $.ajax({
+                url: '/api/uploadImage?id=' + response.id,
+                dataType: 'json',
+                cache: false,
+                contentType: false,
+                processData: false,
+                data: form_data,
+                type: 'post',
+                success: function (data) {
+                  alert(data);
+                }
+              });
+            } else {
+              console.log("Skipping nonimage file")
             }
-          });
-        } else {
-          console.log("Skipping nonimage file")
-        }
-        i++;
-      }
+            i++;
+          }
+        });
+
+
+
 
 
 
