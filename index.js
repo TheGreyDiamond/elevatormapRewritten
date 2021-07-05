@@ -558,7 +558,7 @@ app.post("/register", function (req, res) {
                 var token = buffer.toString("hex");
                 con.query(
                   stmt,
-                  [req.body.email, req.body.username, token],
+                  [req.body.email, req.body.username, hash],
                   (err, results1, fields) => {
                     if (err) {
                       res.send(
@@ -576,7 +576,7 @@ app.post("/register", function (req, res) {
                       // Create mail verification
                       con.query(
                         stmt2,
-                        [req.body.email, results1.insertId, hash],
+                        [req.body.email, results1.insertId, token],
                         (err, results, fields) => {
                           if (err) {
                             res.send(
