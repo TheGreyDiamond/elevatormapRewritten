@@ -119,7 +119,7 @@
         res = JSON.parse(httpGet("/api/getElevatorById?id=" + this.options.id));
         if (res.state == "Ok") {
           visitStates = [
-            "Test elevator",
+            "Test elevator",  
             "Public",
             "On private property",
             "Public but locked",
@@ -148,6 +148,13 @@
             "#VISIT",
             visitStates[res.results[0].visitabilty]
           );
+          try{
+            var username = JSON.parse(httpGet("/api/resolveNameById?id=" + res.results[0].creator)).results[0].username
+          }catch{
+            username = "Unknown"
+          }
+          
+          inspector = inspector.replace("#CREATOR", username);
           document.getElementById("inspector").innerHTML = inspector;
 
           // Make gallery

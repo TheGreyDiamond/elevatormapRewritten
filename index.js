@@ -189,7 +189,7 @@ function checkIfMySQLStructureIsReady() {
           const sql =
             "CREATE TABLE `" +
             mysqlData.database +
-            "`.`elevators` ( `id` INT NOT NULL AUTO_INCREMENT , `lat` FLOAT NOT NULL , `lng` FLOAT NOT NULL , `manufacturer` VARCHAR(512) NOT NULL , `modell` VARCHAR(512) NOT NULL , `info` VARCHAR(512) NOT NULL , `visitabilty` INT NOT NULL , `technology` INT NOT NULL , `images` JSON NOT NULL , `amountOfFloors` INT NOT NULL , `maxPassangers` INT NOT NULL , `maxWeight` INT NOT NULL , PRIMARY KEY (`id`)) ENGINE = InnoDB;";
+            "`.`elevators` ( `id` INT NOT NULL AUTO_INCREMENT , `lat` FLOAT NOT NULL , `lng` FLOAT NOT NULL , `manufacturer` VARCHAR(512) NOT NULL , `modell` VARCHAR(512) NOT NULL , `info` VARCHAR(512) NOT NULL , `visitabilty` INT NOT NULL , `technology` INT NOT NULL , `images` JSON NOT NULL , `amountOfFloors` INT NOT NULL , `maxPassangers` INT NOT NULL , `maxWeight` INT NOT NULL , `creator` INT NOT NULL, PRIMARY KEY (`id`)) ENGINE = InnoDB;";
           const newSql =
             "CREATE TABLE `" +
             mysqlData.database +
@@ -291,19 +291,33 @@ app.post("/login", function (req, res) {
               if (response) {
                 // Login okay
                 sess.username = result[0].username;
-                sess.id = result[0].id;
+                sess.uid = String(result[0].id);
                 sess.mail = result[0].email;
 
                 const data = fs.readFileSync("templates/redirect.html", "utf8");
-                res.send(
-                  Eta.render(data, {
-                    author: author,
-                    desc: desc,
-                    siteTitel: sitePrefix + "Ok",
-                    fontawesomeKey: fontawesomeKey,
-                    url: "/profile",
-                  })
-                );
+                if(req.query.r != undefined && req.query.r != ""){
+                  res.send(
+                    Eta.render(data, {
+                      author: author,
+                      desc: desc,
+                      siteTitel: sitePrefix + "Ok",
+                      fontawesomeKey: fontawesomeKey,
+                      url: req.query.r,
+                    })
+                  );
+
+                }else{
+                  res.send(
+                    Eta.render(data, {
+                      author: author,
+                      desc: desc,
+                      siteTitel: sitePrefix + "Ok",
+                      fontawesomeKey: fontawesomeKey,
+                      url: "/profile",
+                    })
+                  );
+                }
+                
               } else {
                 // Password falsch
                 const data = fs.readFileSync("templates/login.html", "utf8");
@@ -772,7 +786,9 @@ app.get("/map", function (req, res) {
 
 app.get("/createElevator", function (req, res) {
   if (mysqlIsUpAndOkay) {
-    const data = fs.readFileSync("templates/createElevator.html", "utf8");
+
+    if (req.session.username != undefined) {
+      const data = fs.readFileSync("templates/createElevator.html", "utf8");
     res.send(
       Eta.render(data, {
         author: author,
@@ -782,6 +798,21 @@ app.get("/createElevator", function (req, res) {
         mapboxAccessToken: mapboxAccessToken,
       })
     );
+    } else {
+      const data = fs.readFileSync("templates/redirect.html", "utf8");
+      res.send(
+        Eta.render(data, {
+          author: author,
+          desc: desc,
+          siteTitel: sitePrefix + "Profile",
+          fontawesomeKey: fontawesomeKey,
+          url: "/login?r=/createElevator",
+        })
+      );
+    }
+
+
+    
   } else {
     const data = fs.readFileSync("templates/dbError.html", "utf8");
     var displayText =
@@ -939,11 +970,12 @@ const getAppCookies = (req) => {
 };
 
 app.post("/api/saveNewElevatorMeta", function (req, res) {
+  var sess = req.session;
   console.log(req.headers.cookie);
   tempJs = JSON.parse(decodeURIComponent(getAppCookies(req, res)["tempStore"]));
   console.log(tempJs);
   const sql =
-    "INSERT INTO elevators (lat, lng, manufacturer, modell, info, visitabilty, technology, amountOfFloors, maxPassangers, maxWeight, images) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '{ \"images\": []}')";
+    "INSERT INTO elevators (lat, lng, manufacturer, modell, info, visitabilty, technology, amountOfFloors, maxPassangers, maxWeight, images, creator) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '{ \"images\": []}', ?)";
   con.query(
     sql,
     [
@@ -957,6 +989,7 @@ app.post("/api/saveNewElevatorMeta", function (req, res) {
       tempJs.flor,
       tempJs.pepl,
       tempJs.weig,
+      sess.uid
     ],
     function (err, result) {
       if (err) throw err;
@@ -1024,6 +1057,63 @@ app.get("/api/getElevatorLocation", function (req, res) {
     res.status(400);
     res.setHeader("Content-Type", "application/json");
     res.send(JSON.stringify({ state: "Failed", message: "Missing arguments" }));
+  }
+});
+
+app.get("/api/resolveNameById", function (req, res) {
+  if (mysqlIsUpAndOkay) {
+    if(req.query.id != undefined && req.query.id != ""){
+
+      const sql = "SELECT username FROM users WHERE id=?";
+      con.query(sql, [req.query.id], function (err, result, fields) {
+        if (err) {
+          res.status(500);
+          res.send(
+            JSON.stringify({
+              state: "Failed",
+              message: "A server side error occured.",
+              results: [],
+            })
+          );
+          logger.error("The server failed to execute a request");
+          mysqlIsUpAndOkay = false;
+        } else {
+          console.log(result[0]);
+          res.status(200);
+          res.setHeader("Content-Type", "application/json");
+          res.send(
+            JSON.stringify({ state: "Ok", message: "", results: result })
+          );
+        }
+      }
+    );
+    }else{
+      res.status(400);
+    res.setHeader("Content-Type", "application/json");
+    res.send(JSON.stringify({ state: "Failed", message: "Missing argument: id" }));
+    }
+  } else {
+    const data = fs.readFileSync("templates/dbError.html", "utf8");
+    var displayText =
+      "This might be an artifact of a recent restart. Maybe wait a few minutes and reload this page.";
+    if (startUpTime + 60 <= Math.floor(new Date().getTime() / 1000)) {
+      displayText =
+        "The server failed to connect to the MySQL server. This means it was unable to load any data.";
+    }
+    if (mySQLstate == 1) {
+      displayText =
+        "There is a problem with the database servers setup. Please check the log for more info.";
+    }
+
+    res.send(
+      Eta.render(data, {
+        author: author,
+        desc: desc,
+        siteTitel: sitePrefix + "Error",
+        fontawesomeKey: fontawesomeKey,
+        displayText: displayText,
+      })
+    );
   }
 });
 

@@ -160,6 +160,8 @@
   </aside>
   <script type="text/javascript">
 
+    var lockMap = false;
+
     function noRestore() {
       off();
       Cookies.remove("tempStore")
@@ -248,6 +250,7 @@
             }
             i++;
           }
+          console.log("DONE!")
         });
 
 
@@ -276,6 +279,7 @@
         document.getElementById("step2").style.display = 'none';
         document.getElementById("step3").style.display = 'block';
         document.getElementById("step4").style.display = 'none';
+        lockMap = false;
       }
       if (currentPage == 3) {
         document.getElementById("step1").style.display = 'none';
@@ -284,6 +288,7 @@
         document.getElementById("step4").style.display = 'block';
         document.getElementById("step5").style.display = 'none';
         document.getElementById("missingAlert").style.display = 'none';
+        lockMap = true;
       }
       if (currentPage == 4) {
         document.getElementById("step1").style.display = 'none';
@@ -346,17 +351,21 @@
     var lngElm = document.getElementById("lng");
 
     latElm.addEventListener('input', function (evt) {
-      markers.clearLayers();
-      console.log(evt.target.value)
-      const lat = evt.target.value;
-      const lng = lngElm.value;
-      var marker = new theMarker([lat, lng])
-      //marker.addTo(mymap)
-      markers.addLayer(marker);
-      markers.addTo(mymap);
+      if(!lockMap){
+        markers.clearLayers();
+        console.log(evt.target.value)
+        const lat = evt.target.value;
+        const lng = lngElm.value;
+        var marker = new theMarker([lat, lng])
+        //marker.addTo(mymap)
+        markers.addLayer(marker);
+        markers.addTo(mymap);
+      }
+
     });
 
     lngElm.addEventListener('input', function (evt) {
+      if(!lockMap){
       markers.clearLayers();
       console.log(evt.target.value)
       const lat = latElm.value;
@@ -365,6 +374,7 @@
       //marker.addTo(mymap)
       markers.addLayer(marker);
       markers.addTo(mymap);
+      }
     });
 
     var amountOfImages = 0;
@@ -405,6 +415,7 @@
     home()
 
     mymap.on('click', function (e) {
+      if(!lockMap){
       markers.clearLayers();
       var coord = e.latlng;
       var lat = coord.lat;
@@ -416,6 +427,9 @@
       document.getElementById("lat").value = lat
       document.getElementById("lng").value = lng
       console.log("You clicked the map at latitude: " + lat + " and longitude: " + lng);
+      }else{
+        console.log("The map is locked.")
+      }
     });
 
     function addPin(item, index) {
