@@ -72,11 +72,17 @@
         class="fas fa-map-marker-alt"
         onclick="home()"
       ></i>
+      <i style="color: black; cursor: pointer" class="fas fas fa-plus" onclick="createNewElev()"></i>
     </aside>
 
     <!-- End Document
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
     <script type="text/javascript">
+
+      function createNewElev(){
+        window.location.href = "/createElevator";
+      }
+
       var amountOfImages = 0;
       var markers = L.markerClusterGroup();
       slideIndex = 1;
