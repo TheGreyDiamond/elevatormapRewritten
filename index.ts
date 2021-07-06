@@ -127,10 +127,8 @@ app.use(csp.contentSecurityPolicy({
 }))
 */
 
-// Settings
-const port = 3000;
-const startUpTime = Math.floor(new Date().getTime() / 1000);
 
+const startUpTime = Math.floor(new Date().getTime() / 1000);
 
 let fontawesomeKey = "";
 let mapboxAccessToken = "";
@@ -140,6 +138,7 @@ let mailConf = { "host": "", "port": 0, "username": "", "password": "" };
 let serverAdress = "";
 let cookieSecret = ""
 let jsonConfigGlobal = {};
+let port = 3000;
 
 // Load config
 try {
@@ -159,6 +158,7 @@ try {
 
   mailConf = jsonConfig.mail;
   serverAdress = jsonConfig.serverAdress;
+  port = jsonConfig.port;
   cookieSecret =
     jsonConfig.cookieSecret || "saF0DSF65AS4DF0S4D6F0S54DF0Fad";
   jsonConfigGlobal = jsonConfig;

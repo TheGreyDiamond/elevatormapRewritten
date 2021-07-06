@@ -3,6 +3,7 @@
     "mapboxAccessToken": "",
     "cookieSecret": "",
     "serverAdress": "",
+    "port": 3000,
     "mysql": {
         "user": "",
         "password": "",
