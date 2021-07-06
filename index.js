@@ -271,9 +271,9 @@ app.get("/createElevator", function (req, res) {
         mapboxAccessToken: mapboxAccessToken
     }));
 });
-require('./Routes/api.route.ts')(app, con, mysqlIsUpAndOkay, logger, metainfo);
-require('./Routes/debug.route.ts')(app, con, logger, metainfo);
-require('./Routes/auth.route.ts')(app, con, logger, metainfo, jsonConfigGlobal);
+require('./routes/api.route.ts')(app, con, mysqlIsUpAndOkay, logger, metainfo);
+require('./routes/debug.route.ts')(app, con, logger, metainfo);
+require('./routes/auth.route.ts')(app, con, logger, metainfo, jsonConfigGlobal);
 // Some loops for handeling stuff
 setInterval(function () {
     if (mysqlIsUpAndOkay == false) {

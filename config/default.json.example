@@ -1,9 +1,23 @@
 {
     "fontAwesome": "",
     "mapboxAccessToken": "",
+    "cookieSecret": "",
+    "serverAdress": "",
     "mysql": {
         "user": "",
         "password": "",
+        "database": "",
         "allowCreation": true
+    },
+    "hCaptcha":{
+        "sitekey": "",
+        "secret": ""
+    },
+    "mail": {
+        "host": "",
+        "port": 0,
+        "username": "",
+        "password": ""
     }
+    
 }
