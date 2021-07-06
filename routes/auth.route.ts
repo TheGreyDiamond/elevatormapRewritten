@@ -238,7 +238,7 @@ module.exports = function (app, con, logger, metainfo, jsonConfig) {
     app.get("/profile", function (req, res) {
         if (req.session.username != undefined) {
             let greeting = greetingTime(new Date());
-            greeting += req.session.username;
+            greeting += " " + req.session.username;
             const hash = cryptoF
                 .createHash("md5")
                 .update(req.session.mail.replace(" ", "").toLowerCase())
@@ -299,7 +299,7 @@ module.exports = function (app, con, logger, metainfo, jsonConfig) {
             password != ""
         ) {
             if (mailRegex.test(mail)) {
-                const stmt = "SELECT * FROM users WHERE email='?';";
+                const stmt = "SELECT * FROM users WHERE email=?;";
                 con.query(stmt, [mail], function (err, result) {
                     if (err) throw err; // TODO proper error page
                     if (result.length == 0) {
@@ -414,7 +414,7 @@ module.exports = function (app, con, logger, metainfo, jsonConfig) {
             } else {
                 const emailContent =
                     "Hi! \n You have created an account for the open elevator map. To finalize the process please verify your E-Mail adress. Use this link: http://" +
-                    serverAdress +
+                    jsonConfig.serverAdress +
                     "/verify/" +
                     result[0].token;
                 transport.sendMail({

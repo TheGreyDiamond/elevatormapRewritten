@@ -32,81 +32,7 @@ logger.add(
 
 const app = express();
 
-app.use(express.static("static"));
 
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
-
-app.use(function (req, res, next) {
-  const pathesWhichRequireDB = ["map", "login", "register"];
-  const pathesWhichRequireLogin = ["createElevator"];
-  const path = req.path
-  const pathesDes = path.split("/")
-  let requiresDB = false;
-  let requiresLogin = false;
-  let allowContinue = true;
-  console.log(pathesDes)
-
-  if (pathesWhichRequireLogin.indexOf(pathesDes[1]) > -1) {
-    requiresLogin = true;
-  }
-
-  if (pathesDes[1] == "api") {
-    requiresDB = true;
-  }
-  if (pathesWhichRequireDB.indexOf(pathesDes[1]) > -1) {
-    requiresDB = true;
-  }
-
-  if (requiresDB) {
-    if (!mysqlIsUpAndOkay) {
-      allowContinue = false;
-      const data = fs.readFileSync("templates/dbError.html", "utf8");
-      let displayText =
-        "This might be an artifact of a recent restart. Maybe wait a few minutes and reload this page.";
-      if (startUpTime + 60 <= Math.floor(new Date().getTime() / 1000)) {
-        displayText =
-          "The server failed to connect to the MySQL server. This means it was unable to load any data.";
-      }
-      if (mySQLstate == 1) {
-        displayText =
-          "There is a problem with the database servers setup. Please check the log for more info.";
-      }
-
-      res.send(
-        Eta.render(data, {
-          author: metainfo.author,
-          desc: metainfo.desc,
-          siteTitel: metainfo.sitePrefix + "Error",
-          fontawesomeKey: fontawesomeKey,
-          displayText: displayText,
-        })
-      );
-    }
-  }
-
-  if (requiresLogin) {
-    allowContinue = false;
-    const data = fs.readFileSync("templates/redirect.html", "utf8");
-    res.send(
-      Eta.render(data, {
-        author: metainfo.author,
-        desc: metainfo.desc,
-        siteTitel: metainfo.sitePrefix + "Redirect",
-        fontawesomeKey: fontawesomeKey,
-        url: "/login?r=" + path,
-      })
-    );
-  }
-
-  console.log('Time:', Date.now())
-  if (allowContinue) {
-    next()
-  } else {
-    console.log("Stopped further exec of route")
-  }
-
-})
 
 /*
 app.use(csp.contentSecurityPolicy({
@@ -167,6 +93,84 @@ try {
     "While reading the config an error occured. The error was: " + error
   );
 }
+
+app.use(express.static("static"));
+
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+app.use(session({ secret: cookieSecret }));
+app.use(function (req, res, next) {
+  const pathesWhichRequireDB = ["map", "login", "register"];
+  const pathesWhichRequireLogin = ["createElevator"];
+  const path = req.path
+  const pathesDes = path.split("/")
+  let requiresDB = false;
+  let requiresLogin = false;
+  let allowContinue = true;
+  console.log(pathesDes)
+
+  if (pathesWhichRequireLogin.indexOf(pathesDes[1]) > -1) {
+    requiresLogin = true;
+  }
+
+  if (pathesDes[1] == "api") {
+    requiresDB = true;
+  }
+  if (pathesWhichRequireDB.indexOf(pathesDes[1]) > -1) {
+    requiresDB = true;
+  }
+
+  if (requiresDB) {
+    if (!mysqlIsUpAndOkay) {
+      allowContinue = false;
+      const data = fs.readFileSync("templates/dbError.html", "utf8");
+      let displayText =
+        "This might be an artifact of a recent restart. Maybe wait a few minutes and reload this page.";
+      if (startUpTime + 60 <= Math.floor(new Date().getTime() / 1000)) {
+        displayText =
+          "The server failed to connect to the MySQL server. This means it was unable to load any data.";
+      }
+      if (mySQLstate == 1) {
+        displayText =
+          "There is a problem with the database servers setup. Please check the log for more info.";
+      }
+
+      res.send(
+        Eta.render(data, {
+          author: metainfo.author,
+          desc: metainfo.desc,
+          siteTitel: metainfo.sitePrefix + "Error",
+          fontawesomeKey: fontawesomeKey,
+          displayText: displayText,
+        })
+      );
+    }
+  }
+
+  if (requiresLogin) {
+    if (req.session.username == undefined) {
+      allowContinue = false;
+      const data = fs.readFileSync("templates/redirect.html", "utf8");
+      res.send(
+        Eta.render(data, {
+          author: metainfo.author,
+          desc: metainfo.desc,
+          siteTitel: metainfo.sitePrefix + "Redirect",
+          fontawesomeKey: fontawesomeKey,
+          url: "/login?r=" + path,
+        })
+      );
+    }
+  }
+
+  console.log('Time:', Date.now())
+  if (allowContinue) {
+    next()
+  } else {
+    console.log("Stopped further exec of route")
+  }
+
+})
 
 const transport = nodemailer.createTransport({
   host: mailConf.host,
