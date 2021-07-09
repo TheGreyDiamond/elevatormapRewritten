@@ -16,5 +16,5 @@ Setup steps:
 It will autogenerate all tables needed. And then startup.
 
 ToDo:
-[ ] Allow user edits
-[ ] Allow moderation
+- [ ] Allow user edits
+- [ ] Allow moderation
