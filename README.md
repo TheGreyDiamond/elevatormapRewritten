@@ -14,3 +14,7 @@ Setup steps:
 4. Make .js file with `npm run makeJS` (skip if you want to test it)
 5. Start it with `npm start` (or use pm2)
 It will autogenerate all tables needed. And then startup.
+
+ToDo:
+[ ] Allow user edits
+[ ] Allow moderation
