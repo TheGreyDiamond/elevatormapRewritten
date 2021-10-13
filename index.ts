@@ -5,7 +5,6 @@ const Eta = require("eta");
 const winston = require("winston");
 const mysql = require("mysql");
 const bodyParser = require("body-parser");
-// const csp = require(`helmet`);
 const session = require("express-session");
 const nodemailer = require("nodemailer");
 
@@ -32,34 +31,12 @@ logger.add(
 
 const app = express();
 
-
-
-/*
-app.use(csp.contentSecurityPolicy({
-  useDefaults: true,
-  contentSecurityPolicy: false,
-  crossOriginEmbedderPolicy: false,
-  directives: {
-    "default-src": [`'self'`],
-    "img-src": [`'self'`],
-    scriptSrc: [`'self'`, `https://hcaptcha.com`, `https://*.hcaptcha.com`, `https://*.fontawesome.com`, "unsafe-inline", "unsafe-eval","'unsafe-inline'"],
-    "script-src-attr": [`'self'`, `https://hcaptcha.com`, `https://*.hcaptcha.com`, `https://*.fontawesome.com`, "unsafe-inline", "unsafe-eval"],
-    "frame-src": [`'self'`, `https://hcaptcha.com`, `https://*.hcaptcha.com`],
-    "style-src": [`'self'`, `https://hcaptcha.com`, `https://*.hcaptcha.com`, `https://*.fontawesome.com`, `'unsafe-inline'`],
-    "connect-src": [`'self'`, `https://hcaptcha.com`, `https://*.hcaptcha.com`, `https://*.fontawesome.com`],
-    "font-src": [`'self'`, `https://*.fontawesome.com`],
-  },
-  
-}))
-*/
-
-
 const startUpTime = Math.floor(new Date().getTime() / 1000);
 
+// Skeleton Variables
 let fontawesomeKey = "";
 let mapboxAccessToken = "";
 let mysqlData = { "user": "", "password": "", "database": "", "allowCreation": false };
-let hCaptcha = { "sitekey": "", "secret": "" };
 let mailConf = { "host": "", "port": 0, "username": "", "password": "" };
 let serverAdress = "";
 let cookieSecret = ""
@@ -94,12 +71,14 @@ try {
   );
 }
 
+// Express (server) preperation
 app.use(express.static("static"));
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(session({ secret: cookieSecret }));
 app.use(function (req, res, next) {
+  // PreShow Errorpage handler
   const pathesWhichRequireDB = ["map", "login", "register"];
   const pathesWhichRequireLogin = ["createElevator"];
   const path = req.path
@@ -169,9 +148,9 @@ app.use(function (req, res, next) {
   } else {
     console.log("Stopped further exec of route")
   }
-
 })
 
+// Mail preperation
 const transport = nodemailer.createTransport({
   host: mailConf.host,
   port: mailConf.port,
@@ -179,15 +158,12 @@ const transport = nodemailer.createTransport({
   secure: false,
   debug: true,
   disableFileAccess: true,
-  //authMethod: "START TLS",
   auth: {
     user: mailConf.username,
     pass: mailConf.password,
   },
 });
 
-//let transporter = nodemailer.createTransport(transport)
-//console.log(transport.host)
 logger.info("Testing SMTP connection");
 transport.verify(function (error) {
   if (error) {
@@ -196,9 +172,6 @@ transport.verify(function (error) {
     logger.info("SMPT server is ready to accept messages");
   }
 });
-
-app.use(session({ secret: cookieSecret }));
-
 
 // Basic defines for html
 const metainfo = {
@@ -219,8 +192,6 @@ let con = mysql.createConnection({
   password: mysqlData.password,
   database: mysqlData.database,
 });
-
-
 
 function checkIfMySQLStructureIsReady() {
   if (mysqlIsUpAndOkay) {
@@ -288,7 +259,7 @@ con.connect(function (err) {
 });
 
 // Routes
-app.get("/", function (req, res) {
+app.get("/", function (req, res) { // Index page
   const data = fs.readFileSync("templates/index.html", "utf8");
   res.send(
     Eta.render(data, {
@@ -300,7 +271,7 @@ app.get("/", function (req, res) {
   );
 });
 
-app.get("/map", function (req, res) {
+app.get("/map", function (req, res) { // Map page showing all elevators
   const data = fs.readFileSync("templates/map.html", "utf8");
   res.send(
     Eta.render(data, {
@@ -314,7 +285,7 @@ app.get("/map", function (req, res) {
 
 });
 
-app.get("/createElevator", function (req, res) {
+app.get("/createElevator", function (req, res) { // Page to create a new elvator
   const data = fs.readFileSync("templates/createElevator.html", "utf8");
   res.send(
     Eta.render(data, {
@@ -331,9 +302,9 @@ require('./routes/api.route.ts')(app, con, mysqlIsUpAndOkay, logger, metainfo);
 require('./routes/debug.route.ts')(app, con, logger, metainfo);
 require('./routes/auth.route.ts')(app, con, logger, metainfo, jsonConfigGlobal);
 
-// Some loops for handeling stuff
+// Some loops for handeling stuff, 
 setInterval(() => {
-  if (mysqlIsUpAndOkay == false) {
+  if (mysqlIsUpAndOkay == false) { // SQL reconnect
     logger.warn("Retrying to connect to MySQL");
     con = mysql.createConnection({
       host: "localhost",
@@ -353,7 +324,7 @@ setInterval(() => {
       }
     });
   }
-}, 60000);
+}, 60*1000); // Every minute
 
 // App start
 app.listen(port, () => {

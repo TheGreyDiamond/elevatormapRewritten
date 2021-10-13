@@ -58,7 +58,6 @@ module.exports = function (app, con, mysqlIsUpAndOkay, logger) {
 
     app.get("/api/resolveNameById", function (req, res) {
         if (req.query.id != undefined && req.query.id != "") {
-
             const sql = "SELECT username FROM users WHERE id=?";
             con.query(sql, [req.query.id], function (err, result) {
                 if (err) {
